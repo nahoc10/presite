@@ -1,5 +1,6 @@
 import { parse as parseUrl } from 'url'
-import { request, cleanup } from 'taki'
+// @ts-ignore
+import { request, cleanup } from './taki'
 import chalk from 'chalk'
 import { PromiseQueue } from '@egoist/promise-queue'
 import { Writer } from './Writer'
@@ -51,10 +52,10 @@ export class Crawler {
           let links: Set<string> | undefined
           const html = await request({
             url: `http://${hostname}:${port}${route}`,
-            onBeforeRequest(url) {
+            onBeforeRequest(url: any) {
               logger.log(`Crawling contents from ${chalk.cyan(url)}`)
             },
-            async onBeforeClosingPage(page) {
+            async onBeforeClosingPage(page: any) {
               links = new Set(
                 await page.evaluate(
                   ({ hostname, port }: { hostname: string; port: string }) => {
@@ -71,11 +72,11 @@ export class Crawler {
             manually: SPECIAL_EXTENSIONS_RE.test(route)
               ? true
               : options.manually,
-            async onCreatedPage(page) {
+            async onCreatedPage(page: any) {
               if (options.onBrowserPage) {
                 await options.onBrowserPage(page)
               }
-              page.on('console', (e) => {
+              page.on('console', (e: any) => {
                 const type = e.type()
                 // @ts-ignore
                 const log = console[type] || console.log
