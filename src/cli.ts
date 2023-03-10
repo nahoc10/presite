@@ -25,6 +25,10 @@ async function main() {
       '--manually [optional_variable_name]',
       'Manually set ready state in your app'
     )
+    .option(
+      '--silent [optional_variable_name]',
+      'Silence warnings'
+    )
     .option('-m, --minify', 'Minify HTML')
     .option('-r, --routes <routes>', 'Addtional routes to crawl contents from')
     .option('-d, -o, --out-dir <dir>', 'The directory to output files')
@@ -90,6 +94,7 @@ async function main() {
           manually: config.manually,
           linkFilter: config.linkFilter,
           wait: config.wait,
+          silent: config.silent,
         },
         writer,
         logger,
