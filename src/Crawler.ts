@@ -25,6 +25,7 @@ export type CrawlerOptions = {
     manually?: string | boolean
     linkFilter?: (url: string) => boolean
     wait?: string | number
+    silent?: boolean
   }
   writer: Writer
   logger: Logger
@@ -81,10 +82,13 @@ export class Crawler {
                 // @ts-ignore
                 const log = console[type] || console.log
                 const location = e.location()
-                log(
-                  `Message from ${location.url}:${location.lineNumber}:${location.columnNumber}`,
-                  e.text()
-                )
+
+                if(!options.silent) {
+                  log(
+                    `Message from ${location.url}:${location.lineNumber}:${location.columnNumber}`,
+                    e.text()
+                    )
+                  }
               })
             },
             wait: options.wait,
