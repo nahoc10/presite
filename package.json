@@ -1,6 +1,6 @@
 {
   "name": "cohan-presite",
-  "version": "2.0.6",
+  "version": "2.0.8",
   "description": "CLI app for pre-rendering SPA websites.",
   "bin": "dist/cli.js",
   "files": [
