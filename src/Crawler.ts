@@ -10,6 +10,7 @@ import fs from 'fs'
 import prependFile from 'prepend-file'
 
 export const SPECIAL_EXTENSIONS_RE = /\.(xml|json)$/
+const SITEMAP_PATH = './public/sitemap.xml'
 
 const routeToFile = (route: string) => {
   if (/\.html$/.test(route) || SPECIAL_EXTENSIONS_RE.test(route)) {
@@ -19,7 +20,7 @@ const routeToFile = (route: string) => {
 }
 
 const appendPreprendSitemap = async () => {
-  await prependFile('./public/sitemap.xml', `
+  await prependFile(SITEMAP_PATH, `
 <?xml version="1.0" encoding="UTF-8"?>
   <urlset
     xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
@@ -30,7 +31,7 @@ const appendPreprendSitemap = async () => {
   >
 `)
 
-  fs.appendFileSync('./public/sitemap.xml', '</urlset>');
+  fs.appendFileSync(SITEMAP_PATH, '</urlset>');
 }
 
 export type CrawlerOptions = {
@@ -56,6 +57,7 @@ export class Crawler {
   }
 
   async crawl() {
+    fs.writeFileSync(SITEMAP_PATH, ''); // wipe sitemap.xml file
     const { hostname, port, options, writer, logger } = this.opts
 
     const routes =
@@ -125,7 +127,7 @@ export class Crawler {
 
           const routeWithTrailingSlash = route.endsWith('/') ? route : route + '/'
 
-          fs.appendFileSync('./public/sitemap.xml', `
+          fs.appendFileSync(SITEMAP_PATH, `
   <url>
     <loc>https://core.app${routeWithTrailingSlash}</loc>
     <lastmod>${new Date().toISOString().slice(0, 10)}</lastmod>
@@ -145,7 +147,7 @@ export class Crawler {
 
           await writer.write({ html, file })
         },
-        { maxConcurrent: 200 }
+        { maxConcurrent: 50 }
       )
       for (const route of routes) {
         queue.add(route)
@@ -154,9 +156,7 @@ export class Crawler {
     }
 
     await crawlRoute(routes)
-
     await appendPreprendSitemap()
-
     await cleanup()
   }
 }
