@@ -1,6 +1,6 @@
 {
   "name": "cohan-presite",
-  "version": "2.0.3",
+  "version": "2.0.5",
   "description": "CLI app for pre-rendering SPA websites.",
   "bin": "dist/cli.js",
   "files": [
@@ -40,6 +40,7 @@
     "esbuild-register": "^2.3.0",
     "fs": "^0.0.1-security",
     "get-port": "5.1.1",
+    "prepend-file": "^2.0.1",
     "prettier": "2.0.5",
     "sirv": "1.0.1",
     "tsup": "^5.10.0",

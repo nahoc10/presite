@@ -7,6 +7,7 @@ import { Writer } from './Writer'
 import { Logger } from './Logger'
 import { Page } from 'puppeteer-core'
 import fs from 'fs'
+import prependFile from 'prepend-file'
 
 export const SPECIAL_EXTENSIONS_RE = /\.(xml|json)$/
 
@@ -15,6 +16,21 @@ const routeToFile = (route: string) => {
     return route
   }
   return route.replace(/\/?$/, '/index.html')
+}
+
+const appendPreprendSitemap = async () => {
+  await prependFile('./public/sitemap.xml', `
+<?xml version="1.0" encoding="UTF-8"?>
+  <urlset
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://www.sitemaps.org/schemas/sitemap/0.9 http://www.sitemaps.org/schemas/sitemap/0.9/sitemap.xsd
+    http://www.w3.org/1999/xhtml http://www.w3.org/2002/08/xhtml/xhtml1-strict.xsd"
+    xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"
+    xmlns:xhtml="http://www.w3.org/1999/xhtml"
+  >
+`)
+
+  fs.appendFileSync('./public/sitemap.xml', '</urlset>');
 }
 
 export type CrawlerOptions = {
@@ -107,7 +123,25 @@ export class Crawler {
 
           logger.log(`Writing ${chalk.cyan(file)} for ${chalk.cyan(route)}`)
 
-          fs.writeFileSync('./sitemap.xml', 'Hey there!' + route);
+          const routeWithTrailingSlash = route.endsWith('/') ? route : route + '/'
+
+          fs.appendFileSync('./public/sitemap.xml', `
+  <url>
+    <loc>https://core.app${routeWithTrailingSlash}</loc>
+    <lastmod>${new Date().toISOString().slice(0, 10)}</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+    <xhtml:link rel="alternate" hreflang="de-de" href="https://core.app/de${routeWithTrailingSlash}" />
+    <xhtml:link rel="alternate" hreflang="en-us" href="https://core.app/en${routeWithTrailingSlash}" />
+    <xhtml:link rel="alternate" hreflang="es-es" href="https://core.app/es${routeWithTrailingSlash}" />
+    <xhtml:link rel="alternate" hreflang="hi-in" href="https://core.app/hi${routeWithTrailingSlash}" />
+    <xhtml:link rel="alternate" hreflang="ja-jp" href="https://core.app/ja${routeWithTrailingSlash}" />
+    <xhtml:link rel="alternate" hreflang="ko-kr" href="https://core.app/ko${routeWithTrailingSlash}" />
+    <xhtml:link rel="alternate" hreflang="ru-ru" href="https://core.app/ru${routeWithTrailingSlash}" />
+    <xhtml:link rel="alternate" hreflang="tr-tr" href="https://core.app/tr${routeWithTrailingSlash}" />
+    <xhtml:link rel="alternate" hreflang="zh-cn" href="https://core.app/zh-cn${routeWithTrailingSlash}" />
+    <xhtml:link rel="alternate" hreflang="zh-tw" href="https://core.app/zh-tw${routeWithTrailingSlash}" />
+  </url>`);
 
           await writer.write({ html, file })
         },
@@ -120,6 +154,9 @@ export class Crawler {
     }
 
     await crawlRoute(routes)
+
+    await appendPreprendSitemap()
+
     await cleanup()
   }
 }
