@@ -36,12 +36,13 @@ export type CrawlerOptions = {
   hostname: string
   port: number
   options: {
-    routes: string[] | (() => Promise<string[]>)
-    onBrowserPage?: (page: Page) => void | Promise<void>
-    manually?: string | boolean
-    linkFilter?: (url: string) => boolean
-    wait?: string | number
+    routes: string[] | (() => Promise <string[]> )
+    onBrowserPage?: (page: Page) => void | Promise <void>
+      manually?: string | boolean
+      wait?: string | number
+      linkFilter?: (url: string) => boolean
     silent?: boolean
+    sitemap?: boolean
   }
   writer: Writer
   logger: Logger
@@ -55,19 +56,28 @@ export class Crawler {
   }
 
   async crawl() {
-    fs.writeFileSync(SITEMAP_PATH, ''); // wipe sitemap.xml file
-    const { hostname, port, options, writer, logger } = this.opts
+    const {
+      hostname,
+      port,
+      options,
+      writer,
+      logger
+    } = this.opts
+
+    if (options.sitemap) {
+      fs.writeFileSync(SITEMAP_PATH, ''); // wipe sitemap.xml file
+    }
 
     const routes =
-      typeof options.routes === 'function'
-        ? await options.routes()
-        : options.routes
+      typeof options.routes === 'function' ?
+      await options.routes() :
+      options.routes
 
     const crawlRoute = async (routes: string[]) => {
       const queue = new PromiseQueue(
         async (route: string) => {
           const file = routeToFile(route)
-          let links: Set<string> | undefined
+          let links: Set < string > | undefined
           const html = await request({
             url: `http://${hostname}:${port}${route}`,
             onBeforeRequest(url: any) {
@@ -76,20 +86,27 @@ export class Crawler {
             async onBeforeClosingPage(page: any) {
               links = new Set(
                 await page.evaluate(
-                  ({ hostname, port }: { hostname: string; port: string }) => {
+                  ({
+                    hostname,
+                    port
+                  }: {
+                    hostname: string;port: string
+                  }) => {
                     return Array.from(document.querySelectorAll('a'))
                       .filter((a) => {
                         return a.hostname === hostname && a.port === port
                       })
                       .map((a) => a.pathname)
-                  },
-                  { hostname, port: String(port) }
+                  }, {
+                    hostname,
+                    port: String(port)
+                  }
                 )
               )
             },
-            manually: SPECIAL_EXTENSIONS_RE.test(route)
-              ? true
-              : options.manually,
+            manually: SPECIAL_EXTENSIONS_RE.test(route) ?
+              true :
+              options.manually,
             async onCreatedPage(page: any) {
               if (options.onBrowserPage) {
                 await options.onBrowserPage(page)
@@ -100,21 +117,21 @@ export class Crawler {
                 const log = console[type] || console.log
                 const location = e.location()
 
-                if(!options.silent) {
+                if (!options.silent) {
                   log(
                     `Message from ${location.url}:${location.lineNumber}:${location.columnNumber}`,
                     e.text()
-                    )
-                  }
+                  )
+                }
               })
             },
             wait: options.wait,
           })
 
           if (links && links.size > 0) {
-            const filtered = options.linkFilter
-              ? Array.from(links).filter(options.linkFilter)
-              : links
+            const filtered = options.linkFilter ?
+              Array.from(links).filter(options.linkFilter) :
+              links
 
             for (const link of filtered) {
               queue.add(link)
@@ -125,7 +142,8 @@ export class Crawler {
 
           const routeWithTrailingSlash = route.endsWith('/') ? route : route + '/'
 
-          fs.appendFileSync(SITEMAP_PATH, `
+          if (options.sitemap) {
+            fs.appendFileSync(SITEMAP_PATH, `
   <url>
     <loc>https://core.app${routeWithTrailingSlash}</loc>
     <lastmod>${new Date().toISOString().slice(0, 10)}</lastmod>
@@ -142,10 +160,15 @@ export class Crawler {
     <xhtml:link rel="alternate" hreflang="zh-cn" href="https://core.app/zh-cn${routeWithTrailingSlash}" />
     <xhtml:link rel="alternate" hreflang="zh-tw" href="https://core.app/zh-tw${routeWithTrailingSlash}" />
   </url>`);
+          }
 
-          await writer.write({ html, file })
-        },
-        { maxConcurrent: 50 }
+          await writer.write({
+            html,
+            file
+          })
+        }, {
+          maxConcurrent: 50
+        }
       )
       for (const route of routes) {
         queue.add(route)
@@ -154,7 +177,11 @@ export class Crawler {
     }
 
     await crawlRoute(routes)
-    await appendPreprendSitemap()
+
+    if (options.sitemap) {
+      await appendPreprendSitemap()
+    }
+
     await cleanup()
   }
 }

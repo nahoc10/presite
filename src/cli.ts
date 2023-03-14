@@ -26,8 +26,12 @@ async function main() {
       'Manually set ready state in your app'
     )
     .option(
-      '--silent [optional_variable_name]',
+      '--silent',
       'Silence warnings'
+    )
+    .option(
+      '--sitemap',
+      'Generates sitemap'
     )
     .option('-m, --minify', 'Minify HTML')
     .option('-r, --routes <routes>', 'Addtional routes to crawl contents from')
@@ -95,6 +99,7 @@ async function main() {
           linkFilter: config.linkFilter,
           wait: config.wait,
           silent: config.silent,
+          sitemap: config.sitemap,
         },
         writer,
         logger,
