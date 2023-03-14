@@ -6,6 +6,7 @@ import { PromiseQueue } from '@egoist/promise-queue'
 import { Writer } from './Writer'
 import { Logger } from './Logger'
 import { Page } from 'puppeteer-core'
+import fs from 'fs'
 
 export const SPECIAL_EXTENSIONS_RE = /\.(xml|json)$/
 
@@ -105,9 +106,12 @@ export class Crawler {
           }
 
           logger.log(`Writing ${chalk.cyan(file)} for ${chalk.cyan(route)}`)
+
+          fs.writeFileSync('./sitemap.xml', 'Hey there!' + route);
+
           await writer.write({ html, file })
         },
-        { maxConcurrent: 50 }
+        { maxConcurrent: 200 }
       )
       for (const route of routes) {
         queue.add(route)
